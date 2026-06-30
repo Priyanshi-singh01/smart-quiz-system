@@ -1,0 +1,345 @@
+{% extends "admin/base.html" %}
+{% block title %}Admin Dashboard — {% if selected_schedule %}{{ selected_schedule.subject_name }}{% else %}All Subjects{% endif %}{% endblock %}
+
+{% block content %}
+
+<!-- ═══ SUBJECT SELECTOR — ALWAYS VISIBLE AT TOP ══════════════════════════════ -->
+<div style="background:linear-gradient(135deg,rgba(201,168,76,0.12),rgba(201,168,76,0.04));
+            border:2px solid var(--gold);border-radius:14px;padding:1.25rem 1.5rem;margin-bottom:1.75rem;">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+    <div>
+      <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--gold);font-weight:700;margin-bottom:0.3rem;">
+        📌 Active Subject Filter
+      </div>
+      {% if selected_schedule %}
+      <div style="font-size:1.3rem;font-weight:700;color:var(--gold);font-family:'Playfair Display',serif;">
+        {{ selected_schedule.subject_name }}
+        <span style="font-size:0.85rem;color:var(--text-muted);font-family:'DM Sans',sans-serif;font-weight:400;margin-left:0.5rem;">
+          {{ selected_schedule.paper_code }} &nbsp;|&nbsp;
+          {{ selected_schedule.exam_date.strftime('%d %b %Y') }} &nbsp;|&nbsp;
+          {{ selected_schedule.start_time.strftime('%I:%M %p') }} — {{ selected_schedule.end_time.strftime('%I:%M %p') }}
+        </span>
+      </div>
+      <div style="font-size:0.8rem;color:var(--emerald);margin-top:0.25rem;">
+        ✅ All stats, results, students and PDF are filtered to this subject only.
+      </div>
+      {% else %}
+      <div style="font-size:1.1rem;font-weight:600;color:var(--text-muted);">
+        📊 Showing data for <strong style="color:var(--gold);">All Subjects</strong>
+      </div>
+      <div style="font-size:0.8rem;color:var(--text-muted);margin-top:0.25rem;">
+        Select a subject below to filter the entire dashboard.
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Subject Dropdown -->
+    <form method="POST" action="{{ url_for('admin_select_subject') }}" style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+      <input type="hidden" name="next" value="{{ request.url }}"/>
+      <select name="selected_schedule_id" class="form-control"
+              style="min-width:260px;font-weight:600;"
+              onchange="this.form.submit()">
+        <option value="all" {% if not selected_schedule_id %}selected{% endif %}>— All Subjects —</option>
+        {% for s in schedules %}
+        <option value="{{ s.id }}" {% if selected_schedule_id == s.id %}selected{% endif %}>
+          {{ s.subject_name }} ({{ s.paper_code }}) — {{ s.exam_date.strftime('%d %b %Y') }}
+        </option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="btn btn-primary btn-sm">Apply</button>
+    </form>
+  </div>
+</div>
+
+<h1 class="page-title">Admin Dashboard</h1>
+<p class="page-sub">
+  {% if selected_schedule %}
+    Results for <strong>{{ selected_schedule.subject_name }}</strong> ({{ selected_schedule.paper_code }})
+  {% else %}
+    System overview &amp; exam management
+  {% endif %}
+</p>
+
+<!-- Stats -->
+<div class="stats-grid">
+  <div class="stat-card blue">
+    <div class="stat-value" style="color:#00d4ff;text-shadow:0 0 12px rgba(0,212,255,0.4);">{{ students }}</div>
+    <div class="stat-label">{% if selected_schedule %}Students Appeared{% else %}Registered Students{% endif %}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ schedules|length }}</div>
+    <div class="stat-label">Scheduled Quizzes</div>
+  </div>
+  <div class="stat-card green">
+    <div class="stat-value">{{ attempts }}</div>
+    <div class="stat-label">{% if selected_schedule %}Submissions (This Subject){% else %}Total Submissions{% endif %}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ total_questions }}</div>
+    <div class="stat-label">{% if selected_schedule %}Questions (This Subject){% else %}Total Questions{% endif %}</div>
+  </div>
+</div>
+
+{% if active %}
+<div style="background:rgba(46,204,113,0.15);border:2px solid var(--emerald);border-radius:12px;
+            padding:1rem 1.5rem;margin-bottom:1.5rem;display:flex;align-items:center;gap:1rem;">
+  <div style="font-size:2rem;">🟢</div>
+  <div>
+    <div style="font-weight:700;color:var(--emerald);">QUIZ ACTIVE NOW</div>
+    <div style="color:var(--text);">{{ active.subject_name }} — {{ active.paper_code }}
+      &nbsp;|&nbsp; {{ active.start_time.strftime('%I:%M %p') }} to {{ active.end_time.strftime('%I:%M %p') }}</div>
+  </div>
+  <!-- Quick-select the active quiz -->
+  <form method="POST" action="{{ url_for('admin_select_subject') }}" style="margin-left:auto;">
+    <input type="hidden" name="selected_schedule_id" value="{{ active.id }}"/>
+    <input type="hidden" name="next" value="{{ url_for('admin_dashboard') }}"/>
+    <button type="submit" class="btn btn-success btn-sm">📌 Select This</button>
+  </form>
+</div>
+{% endif %}
+
+<!-- Schedule Quiz -->
+<div class="card" style="margin-bottom:1.5rem;">
+  <h3 style="font-size:1.05rem;margin-bottom:1rem;">📅 Schedule New Quiz</h3>
+  <form method="POST" action="{{ url_for('admin_add_schedule') }}">
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;">
+      <div class="form-group"><label class="form-label">Subject Name</label>
+        <input type="text" name="subject_name" class="form-control" placeholder="e.g. DSA" required/></div>
+      <div class="form-group"><label class="form-label">Paper Code</label>
+        <input type="text" name="paper_code" class="form-control" placeholder="e.g. BCA301" required/></div>
+      <div class="form-group"><label class="form-label">Exam Date</label>
+        <input type="date" name="exam_date" class="form-control" required/></div>
+      <div class="form-group"><label class="form-label">Start Time</label>
+        <input type="time" name="start_time" class="form-control" required/></div>
+      <div class="form-group"><label class="form-label">End Time</label>
+        <input type="time" name="end_time" class="form-control" required/></div>
+      <div class="form-group" style="display:flex;align-items:flex-end;">
+        <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;padding-bottom:0.8rem;">
+          <input type="checkbox" name="allow_reattempt" style="accent-color:var(--gold);width:16px;height:16px;"/>
+          <span style="font-size:0.88rem;color:var(--text-muted);">Allow Reattempt</span>
+        </label>
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary">📅 Schedule Quiz</button>
+  </form>
+</div>
+
+<!-- All Scheduled Quizzes -->
+<div class="card" style="margin-bottom:1.5rem;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;">
+    <h3 style="font-size:1.05rem;">📋 All Scheduled Quizzes</h3>
+    <span style="font-size:0.8rem;color:var(--text-muted);">Click 📌 to filter dashboard by a subject</span>
+  </div>
+  {% if schedules %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Subject</th><th>Paper Code</th><th>Date</th><th>Time</th><th>Questions</th><th>Reattempt</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for s in schedules %}
+        <tr style="{% if selected_schedule_id == s.id %}background:rgba(201,168,76,0.07);{% endif %}">
+          <td>
+            <div style="display:flex;align-items:center;gap:0.5rem;">
+              {% if selected_schedule_id == s.id %}
+              <span title="Currently selected" style="color:var(--gold);">📌</span>
+              {% endif %}
+              <strong>{{ s.subject_name }}</strong>
+            </div>
+          </td>
+          <td class="mono text-gold">{{ s.paper_code }}</td>
+          <td class="text-muted">{{ s.exam_date.strftime('%d %b %Y') }}</td>
+          <td class="text-muted" style="font-size:0.85rem;">
+            {{ s.start_time.strftime('%I:%M %p') }} — {{ s.end_time.strftime('%I:%M %p') }}
+          </td>
+          <td>
+            <span style="background:rgba(201,168,76,0.15);color:var(--gold);
+                         padding:0.2rem 0.5rem;border-radius:4px;font-size:0.85rem;font-weight:600;">
+              {{ q_counts.get(s.id, 0) }} Qs
+            </span>
+          </td>
+          <td>
+            {% if s.allow_reattempt %}<span class="badge badge-success">Allowed</span>
+            {% else %}<span class="badge badge-danger">Blocked</span>{% endif %}
+          </td>
+          <td>
+            <div style="display:flex;gap:0.3rem;flex-wrap:wrap;">
+              <!-- Select subject for dashboard -->
+              <form method="POST" action="{{ url_for('admin_select_subject') }}" style="display:inline;">
+                <input type="hidden" name="selected_schedule_id" value="{{ s.id }}"/>
+                <input type="hidden" name="next" value="{{ url_for('admin_dashboard') }}"/>
+                <button type="submit" class="btn btn-secondary btn-sm"
+                        title="Filter dashboard to this subject"
+                        style="{% if selected_schedule_id == s.id %}border-color:var(--gold);color:var(--gold);{% endif %}">
+                  📌 Select
+                </button>
+              </form>
+              <button class="btn btn-secondary btn-sm"
+                onclick="openEdit({{ s.id }},'{{ s.subject_name }}','{{ s.paper_code }}','{{ s.exam_date }}','{{ s.start_time.strftime('%H:%M') }}','{{ s.end_time.strftime('%H:%M') }}',{{ s.allow_reattempt|lower }})">
+                ✏ Edit
+              </button>
+              <form method="POST" action="{{ url_for('admin_toggle_reattempt', sid=s.id) }}" style="display:inline;">
+                <button type="submit" class="btn btn-secondary btn-sm"
+                        title="{{ 'Disable' if s.allow_reattempt else 'Enable' }} reattempt">
+                  {{ '🔒' if s.allow_reattempt else '🔓' }}
+                </button>
+              </form>
+              <a href="{{ url_for('export_leaderboard_pdf', schedule_id=s.id) }}"
+                 class="btn btn-secondary btn-sm" target="_blank" title="Export PDF for this subject">📄</a>
+              <form method="POST" action="{{ url_for('admin_delete_schedule', sid=s.id) }}" style="display:inline;">
+                <button type="submit" class="btn btn-danger btn-sm confirm-delete" title="Delete schedule">🗑</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="text-muted" style="padding:1rem;">No quizzes scheduled yet.</p>
+  {% endif %}
+</div>
+
+<!-- Edit Schedule Modal -->
+<div id="edit-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;align-items:center;justify-content:center;">
+  <div style="background:var(--navy-mid);border:1px solid var(--border);border-radius:16px;padding:2rem;width:90%;max-width:600px;">
+    <h3 style="color:var(--gold);margin-bottom:1.5rem;">✏ Edit Schedule</h3>
+    <form method="POST" id="edit-form">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+        <div class="form-group"><label class="form-label">Subject Name</label>
+          <input type="text" name="subject_name" id="e-subject" class="form-control" required/></div>
+        <div class="form-group"><label class="form-label">Paper Code</label>
+          <input type="text" name="paper_code" id="e-code" class="form-control" required/></div>
+        <div class="form-group"><label class="form-label">Exam Date</label>
+          <input type="date" name="exam_date" id="e-date" class="form-control" required/></div>
+        <div class="form-group"><label class="form-label">Start Time</label>
+          <input type="time" name="start_time" id="e-start" class="form-control" required/></div>
+        <div class="form-group"><label class="form-label">End Time</label>
+          <input type="time" name="end_time" id="e-end" class="form-control" required/></div>
+        <div class="form-group" style="display:flex;align-items:flex-end;">
+          <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;padding-bottom:0.8rem;">
+            <input type="checkbox" name="allow_reattempt" id="e-reattempt" style="accent-color:var(--gold);width:16px;height:16px;"/>
+            <span style="font-size:0.88rem;color:var(--text-muted);">Allow Reattempt</span>
+          </label>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.75rem;margin-top:0.5rem;">
+        <button type="submit" class="btn btn-primary">✓ Update</button>
+        <button type="button" class="btn btn-secondary" onclick="closeEdit()">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Timer Settings -->
+<div class="card" style="margin-bottom:1rem;">
+  <h3 style="font-size:1.05rem;margin-bottom:0.5rem;">⏱ Default Quiz Timer</h3>
+  <form method="POST" action="{{ url_for('admin_settings') }}">
+    <div style="display:flex;align-items:flex-end;gap:1rem;flex-wrap:wrap;">
+      <div><label class="form-label">Hours</label>
+        <input type="number" id="inp-hours" min="0" value="{{ timer // 3600 }}"
+               class="form-control" style="width:90px;" oninput="updateTimer()"/></div>
+      <div><label class="form-label">Minutes</label>
+        <input type="number" id="inp-mins" min="0" max="59" value="{{ (timer % 3600) // 60 }}"
+               class="form-control" style="width:90px;" oninput="updateTimer()"/></div>
+      <div><label class="form-label">Seconds</label>
+        <input type="number" id="inp-secs" min="0" max="59" value="{{ timer % 60 }}"
+               class="form-control" style="width:90px;" oninput="updateTimer()"/></div>
+      <input type="hidden" name="timer_seconds" id="timer-total" value="{{ timer }}"/>
+      <button type="submit" class="btn btn-primary">✓ Save Timer</button>
+    </div>
+  </form>
+</div>
+
+<!-- Top Students (scoped) -->
+{% if top_students %}
+<div class="card" style="margin-bottom:1rem;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;">
+    <h3 style="font-size:1.05rem;">🏆 Top Students
+      {% if selected_schedule %}<span style="color:var(--text-muted);font-size:0.8rem;font-weight:400;"> — {{ selected_schedule.subject_name }}</span>{% endif %}
+    </h3>
+    {% if selected_schedule %}
+    <a href="{{ url_for('export_leaderboard_pdf', schedule_id=selected_schedule.id) }}"
+       class="btn btn-secondary btn-sm" target="_blank">📄 Export {{ selected_schedule.subject_name }} PDF</a>
+    {% else %}
+    <a href="{{ url_for('export_leaderboard_pdf') }}" class="btn btn-secondary btn-sm" target="_blank">📄 Export All PDF</a>
+    {% endif %}
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Rank</th><th>Name</th><th>Roll No.</th><th>Marks</th><th>%</th><th>Attempts</th></tr></thead>
+      <tbody>
+        {% for s in top_students %}
+        <tr>
+          <td>{% if loop.index==1 %}<span class="rank-badge gold">1</span>
+              {% elif loop.index==2 %}<span class="rank-badge silver">2</span>
+              {% elif loop.index==3 %}<span class="rank-badge bronze">3</span>
+              {% else %}<span class="rank-badge">{{ loop.index }}</span>{% endif %}</td>
+          <td><strong>{{ s.name }}</strong></td>
+          <td class="mono text-gold">{{ s.roll_number or '—' }}</td>
+          <td class="text-gold mono">{{ s.best_marks }}/{{ s.total_marks }}</td>
+          <td class="mono">{{ s.pct }}%</td>
+          <td class="text-muted">{{ s.attempts }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<!-- Recent Submissions (scoped) -->
+<div class="card">
+  <h3 style="font-size:1.05rem;margin-bottom:1.25rem;">Recent Submissions
+    {% if selected_schedule %}<span style="color:var(--text-muted);font-size:0.8rem;font-weight:400;"> — {{ selected_schedule.subject_name }}</span>{% endif %}
+  </h3>
+  {% if recent %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Student</th><th>Roll No.</th><th>Subject</th><th>Marks</th><th>%</th><th>Date</th></tr></thead>
+      <tbody>
+        {% for r in recent %}
+        <tr>
+          <td><strong>{{ r.name }}</strong></td>
+          <td class="mono text-muted" style="font-size:0.85rem;">{{ r.roll_number or '—' }}</td>
+          <td style="font-size:0.85rem;">
+            {% if r.subject_name %}<span class="badge badge-warning">{{ r.subject_name }}</span>{% else %}—{% endif %}
+          </td>
+          <td class="text-gold mono">{{ r.obtained_marks }}/{{ r.total_marks }}</td>
+          <td><span class="mono" style="font-size:0.85rem;
+              color:{% if r.pct >= 80 %}var(--emerald){% elif r.pct >= 60 %}var(--gold){% else %}var(--rose){% endif %}">
+            {{ r.pct }}%</span></td>
+          <td class="text-muted" style="font-size:0.82rem;">{{ r.quiz_date.strftime('%d %b %Y, %I:%M %p') }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="text-muted text-center" style="padding:2rem;">
+    {% if selected_schedule %}No submissions for {{ selected_schedule.subject_name }} yet.{% else %}No submissions yet.{% endif %}
+  </p>
+  {% endif %}
+</div>
+
+<script>
+function updateTimer(){
+  const h=parseInt(document.getElementById('inp-hours').value)||0;
+  const m=parseInt(document.getElementById('inp-mins').value)||0;
+  const s=parseInt(document.getElementById('inp-secs').value)||0;
+  document.getElementById('timer-total').value=Math.max(10,(h*3600)+(m*60)+s);
+}
+function openEdit(id,subject,code,exam_date,start,end,reattempt){
+  document.getElementById('edit-form').action='/admin/schedule/edit/'+id;
+  document.getElementById('e-subject').value=subject;
+  document.getElementById('e-code').value=code;
+  document.getElementById('e-date').value=exam_date;
+  document.getElementById('e-start').value=start;
+  document.getElementById('e-end').value=end;
+  document.getElementById('e-reattempt').checked=reattempt;
+  document.getElementById('edit-modal').style.display='flex';
+}
+function closeEdit(){ document.getElementById('edit-modal').style.display='none'; }
+</script>
+{% endblock %}

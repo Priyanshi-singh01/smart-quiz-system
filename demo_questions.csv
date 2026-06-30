@@ -1,0 +1,11 @@
+question,option1,option2,option3,option4,answer,category,marks
+Which keyword is used to create a class in Java?,class,Class,define,struct,class,Java,2
+What does JVM stand for?,Java Virtual Machine,Java Variable Method,Java Verified Module,Java Value Manager,Java Virtual Machine,Java,1
+Which method is the entry point of a Java program?,start(),main(),begin(),run(),main(),Java,2
+What is the correct way to declare an integer in Java?,int x = 5;,integer x = 5;,Int x = 5;,x = int 5;,int x = 5;,Java,1
+Which SQL command is used to retrieve data from a table?,GET,FETCH,SELECT,EXTRACT,SELECT,SQL,2
+What does SQL stand for?,Structured Query Language,Simple Query Language,Standard Query Language,Sequential Query Language,Structured Query Language,SQL,1
+Which SQL clause is used to filter records?,WHERE,FILTER,HAVING,LIMIT,WHERE,SQL,2
+Which Excel function is used to find the sum of a range?,SUM(),ADD(),TOTAL(),PLUS(),SUM(),Excel,1
+What does VLOOKUP do in Excel?,Searches vertically in a table,Deletes values,Counts cells,Sorts data,Searches vertically in a table,Excel,2
+Which Excel shortcut is used to save a file?,Ctrl+S,Ctrl+V,Ctrl+X,Ctrl+P,Ctrl+S,Excel,1

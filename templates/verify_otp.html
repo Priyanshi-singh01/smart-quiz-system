@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"/><title>Verify OTP</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/></head>
+<body>
+<div class="auth-wrap"><div class="auth-card">
+  <div class="auth-logo"><h1>📧 Verify OTP</h1><p>Enter the 6-digit code sent to your email</p></div>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in messages %}
+      <div class="alert alert-{{ 'success' if cat == 'success' else 'error' }}">{{ msg }}</div>
+    {% endfor %}
+  {% endwith %}
+  <form method="POST">
+    <div class="form-group">
+      <label class="form-label">Enter 6-Digit OTP</label>
+      <input type="text" name="otp" class="form-control" placeholder="• • • • • •"
+             maxlength="6" pattern="\d{6}"
+             style="text-align:center;font-size:1.8rem;letter-spacing:0.5rem;" required autofocus/>
+    </div>
+    <button type="submit" class="btn btn-primary btn-block btn-lg">Verify OTP ✓</button>
+  </form>
+  <div style="text-align:center;margin-top:1.25rem;">
+    <p style="color:var(--text-muted);font-size:0.85rem;">
+      Didn't receive? <a href="{{ url_for('resend_otp') }}" style="color:var(--gold);">Resend OTP</a>
+    </p>
+    <p style="color:var(--text-muted);font-size:0.82rem;margin-top:0.5rem;">⏱ Valid for 10 minutes only</p>
+  </div>
+</div></div>
+</body></html>

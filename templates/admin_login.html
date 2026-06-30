@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Admin Login — Smart Quiz</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
+</head>
+<body>
+<div class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div style="font-size:2.5rem;margin-bottom:0.5rem;">👨‍💼</div>
+      <h1>Admin Login</h1>
+      <p>SmartQuiz — Management Panel</p>
+    </div>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for cat, msg in messages %}
+        <div class="alert alert-{{ 'success' if cat == 'success' else 'error' }}">
+          {{ '✓' if cat == 'success' else '✕' }} {{ msg }}
+        </div>
+      {% endfor %}
+    {% endwith %}
+    <form method="POST">
+      <div class="form-group">
+        <label class="form-label">Admin Email</label>
+        <input type="email" name="email" class="form-control" placeholder="admin@quiz.com" required/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <div style="position:relative;">
+          <input type="password" name="password" id="ap" class="form-control"
+                 placeholder="••••••••" required style="padding-right:3rem;"/>
+          <button type="button" onclick="togglePass('ap','ae')"
+                  style="position:absolute;right:0.75rem;top:50%;transform:translateY(-50%);
+                         background:none;border:none;cursor:pointer;font-size:1.1rem;color:var(--text-muted);">
+            <span id="ae">👁</span>
+          </button>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block btn-lg"
+              style="background:#3498db;color:#fff;">Admin Login →</button>
+    </form>
+    <p style="text-align:center;margin-top:1.25rem;font-size:0.88rem;">
+      <a href="{{ url_for('login_choice') }}" style="color:var(--text-muted);">← Back to Login Choice</a>
+    </p>
+  </div>
+</div>
+<script>
+function togglePass(i,e){const x=document.getElementById(i),y=document.getElementById(e);
+x.type=x.type==='password'?'text':'password';y.textContent=x.type==='password'?'👁':'🙈';}
+</script>
+</body>
+</html>

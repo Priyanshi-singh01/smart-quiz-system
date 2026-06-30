@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% block title %}Your Result — Smart Quiz{% endblock %}
+
+{% block content %}
+<div class="container page-wrap">
+  <div class="card" style="max-width:760px;margin:0 auto;">
+
+    <!-- Score Hero -->
+    <div class="result-hero">
+      {% if percentage >= 80 %}<div style="font-size:2.5rem;margin-bottom:0.5rem;">🏆</div>
+      {% elif percentage >= 60 %}<div style="font-size:2.5rem;margin-bottom:0.5rem;">👍</div>
+      {% else %}<div style="font-size:2.5rem;margin-bottom:0.5rem;">📚</div>{% endif %}
+
+      <div class="score-circle" id="score-circle">
+        <div class="score-pct" id="score-pct">0%</div>
+        <div class="score-label">Score</div>
+      </div>
+
+      {% if percentage >= 90 %}<span class="grade-badge grade-A">A+ — Outstanding!</span>
+      {% elif percentage >= 80 %}<span class="grade-badge grade-A">A — Excellent</span>
+      {% elif percentage >= 70 %}<span class="grade-badge grade-B">B — Very Good</span>
+      {% elif percentage >= 60 %}<span class="grade-badge grade-B">C — Good</span>
+      {% elif percentage >= 40 %}<span class="grade-badge grade-C">D — Average</span>
+      {% else %}<span class="grade-badge grade-F">F — Needs Improvement</span>{% endif %}
+
+      <h2 style="margin-top:1rem;">{{ res.name }}</h2>
+      {% if res.subject_name %}
+      <p class="text-muted" style="font-size:0.9rem;">{{ res.subject_name }} — {{ res.paper_code }}</p>
+      {% endif %}
+      <p class="text-muted" style="font-size:0.85rem;">{{ res.quiz_date.strftime('%d %B %Y at %I:%M %p') }}</p>
+    </div>
+
+    <hr class="divider"/>
+
+    <!-- Stats Row -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;text-align:center;margin-bottom:1rem;">
+      <div>
+        <div style="font-size:1.6rem;font-weight:700;color:var(--gold);font-family:'JetBrains Mono',monospace;">{{ res.total }}</div>
+        <div class="text-muted" style="font-size:0.75rem;text-transform:uppercase;">Questions</div>
+      </div>
+      <div>
+        <div style="font-size:1.6rem;font-weight:700;color:var(--emerald);font-family:'JetBrains Mono',monospace;">{{ res.score }}</div>
+        <div class="text-muted" style="font-size:0.75rem;text-transform:uppercase;">Correct</div>
+      </div>
+      <div>
+        <div style="font-size:1.6rem;font-weight:700;color:#00d4ff;font-family:'JetBrains Mono',monospace;">{{ res.obtained_marks }}/{{ res.total_marks }}</div>
+        <div class="text-muted" style="font-size:0.75rem;text-transform:uppercase;">Marks</div>
+      </div>
+      <div>
+        <div style="font-size:1.6rem;font-weight:700;color:var(--rose);font-family:'JetBrains Mono',monospace;">{{ res.total - res.score }}</div>
+        <div class="text-muted" style="font-size:0.75rem;text-transform:uppercase;">Wrong</div>
+      </div>
+    </div>
+
+    {% if rank_row %}
+    <div style="text-align:center;padding:0.75rem;background:rgba(201,168,76,0.08);border-radius:8px;margin-bottom:1rem;">
+      <p style="color:var(--text-muted);font-size:0.9rem;">
+        You ranked <strong style="color:var(--gold);font-size:1.1rem;">#{{ rank_row.rank }}</strong>
+        out of <strong>{{ rank_row.total_students }}</strong> participants
+      </p>
+    </div>
+    {% endif %}
+
+    <div style="display:flex;gap:0.75rem;justify-content:center;margin-bottom:1.5rem;flex-wrap:wrap;">
+      <a href="{{ url_for('quiz') }}"        class="btn btn-primary">🔄 Retry Quiz</a>
+      <a href="{{ url_for('leaderboard') }}" class="btn btn-secondary">🏆 Leaderboard</a>
+      <a href="{{ url_for('dashboard') }}"   class="btn btn-secondary">🏠 Dashboard</a>
+    </div>
+
+    <!-- Answer Review Section -->
+    {% if questions_detail %}
+    <hr class="divider"/>
+    <div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;">
+        <h3 style="font-size:1.1rem;">Answer Review</h3>
+        <div style="display:flex;gap:0.75rem;font-size:0.82rem;">
+          <span style="color:var(--emerald);">✓ Correct: {{ res.score }}</span>
+          <span style="color:var(--rose);">✗ Wrong: {{ res.total - res.score }}</span>
+          <span style="color:var(--text-muted);">— Skipped: {{ res.total - (res.saved_answers | length if res.saved_answers else 0) }}</span>
+        </div>
+      </div>
+
+      {% for qd in questions_detail %}
+      <div style="border:1px solid {% if qd.is_correct %}rgba(46,204,113,0.3){% elif qd.user_answer %}rgba(231,76,60,0.3){% else %}rgba(255,255,255,0.08){% endif %};
+                  border-radius:10px;padding:1.25rem;margin-bottom:0.75rem;
+                  background:{% if qd.is_correct %}rgba(46,204,113,0.05){% elif qd.user_answer %}rgba(231,76,60,0.05){% else %}rgba(255,255,255,0.02){% endif %};">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:0.75rem;margin-bottom:0.75rem;">
+          <div style="font-size:0.85rem;font-weight:600;color:var(--text);line-height:1.5;">
+            <span class="mono" style="color:var(--text-muted);font-size:0.75rem;">Q{{ loop.index }}.</span>
+            {{ qd.question }}
+          </div>
+          <div style="flex-shrink:0;">
+            {% if qd.is_correct %}
+            <span style="color:var(--emerald);font-weight:700;font-size:0.85rem;">✓ +{{ qd.marks }}</span>
+            {% elif qd.user_answer %}
+            <span style="color:var(--rose);font-weight:700;font-size:0.85rem;">✗ 0</span>
+            {% else %}
+            <span style="color:var(--text-muted);font-size:0.85rem;">— Skipped</span>
+            {% endif %}
+          </div>
+        </div>
+
+        {% if qd.image_filename %}
+        <div style="margin-bottom:0.75rem;"><img src="{{ url_for('uploaded_file', filename=qd.image_filename) }}"
+             style="max-width:100%;max-height:180px;border-radius:6px;border:1px solid var(--border);"/></div>
+        {% endif %}
+
+        <div style="display:grid;gap:0.4rem;">
+          {% for opt in qd.options %}
+          <div style="padding:0.5rem 0.85rem;border-radius:6px;font-size:0.88rem;border:1px solid transparent;
+            {% if opt == qd.correct %}background:rgba(46,204,113,0.12);border-color:rgba(46,204,113,0.4);color:var(--emerald);font-weight:600;
+            {% elif opt == qd.user_answer and not qd.is_correct %}background:rgba(231,76,60,0.1);border-color:rgba(231,76,60,0.4);color:var(--rose);
+            {% else %}background:var(--navy-light);color:var(--text-muted);{% endif %}
+            display:flex;align-items:center;gap:0.5rem;">
+            {% if opt == qd.correct %}✓{% elif opt == qd.user_answer and not qd.is_correct %}✗{% else %}&nbsp;{% endif %}
+            {{ opt }}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Animate score counter
+(function() {
+  const target = {{ percentage }};
+  const el = document.getElementById('score-pct');
+  const circle = document.getElementById('score-circle');
+  if (!el) return;
+  let current = 0;
+  const step = target / 60;
+  const interval = setInterval(() => {
+    current = Math.min(current + step, target);
+    el.textContent = Math.round(current) + '%';
+    if (current >= target) {
+      clearInterval(interval);
+      el.textContent = target + '%';
+      // Color the circle based on score
+      {% if percentage >= 80 %}
+      circle.style.borderColor = 'var(--emerald)';
+      circle.style.boxShadow = '0 0 40px rgba(46,204,113,0.3)';
+      el.style.color = 'var(--emerald)';
+      {% elif percentage >= 60 %}
+      circle.style.borderColor = 'var(--sky)';
+      circle.style.boxShadow = '0 0 40px rgba(52,152,219,0.3)';
+      el.style.color = 'var(--sky)';
+      {% elif percentage < 40 %}
+      circle.style.borderColor = 'var(--rose)';
+      circle.style.boxShadow = '0 0 40px rgba(231,76,60,0.3)';
+      el.style.color = 'var(--rose)';
+      {% endif %}
+    }
+  }, 16);
+})();
+</script>
+{% endblock %}

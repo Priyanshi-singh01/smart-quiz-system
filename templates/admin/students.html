@@ -1,0 +1,85 @@
+{% extends "admin/base.html" %}
+{% block title %}Students — {% if selected_schedule %}{{ selected_schedule.subject_name }}{% else %}All{% endif %}{% endblock %}
+
+{% block content %}
+<!-- Subject filter bar -->
+<div style="background:rgba(201,168,76,0.08);border:1px solid var(--border);border-radius:10px;
+            padding:0.75rem 1.25rem;margin-bottom:1.5rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+  <span style="font-size:0.82rem;color:var(--text-muted);">Filtered by:</span>
+  {% if selected_schedule %}
+  <strong style="color:var(--gold);">📌 {{ selected_schedule.subject_name }} ({{ selected_schedule.paper_code }})</strong>
+  <span class="text-muted" style="font-size:0.8rem;">— showing only students who appeared in this exam</span>
+  {% else %}
+  <strong style="color:var(--text-muted);">All Subjects</strong>
+  {% endif %}
+  <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary btn-sm" style="margin-left:auto;">
+    ⚙ Change Subject Filter
+  </a>
+</div>
+
+<h1 class="page-title">👥 {% if selected_schedule %}{{ selected_schedule.subject_name }} — Students{% else %}All Registered Students{% endif %}</h1>
+<p class="page-sub">{{ students|length }} student{% if students|length != 1 %}s{% endif %} — sorted by highest marks</p>
+
+<div class="card">
+  {% if students %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Rank</th><th>Name</th><th>Roll No.</th><th>Email</th><th>Joined</th>
+          <th>Attempts</th><th>Best Marks</th><th>%</th>
+          {% if not selected_schedule %}<th>Subjects</th>{% endif %}
+          <th>Status</th><th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in students %}
+        <tr>
+          <td>{% if loop.index==1 %}<span class="rank-badge gold">1</span>
+              {% elif loop.index==2 %}<span class="rank-badge silver">2</span>
+              {% elif loop.index==3 %}<span class="rank-badge bronze">3</span>
+              {% else %}<span class="rank-badge">{{ loop.index }}</span>{% endif %}</td>
+          <td><strong>{{ s.name }}</strong></td>
+          <td class="mono text-gold">{{ s.roll_number or '—' }}</td>
+          <td class="text-muted" style="font-size:0.82rem;">{{ s.email }}</td>
+          <td class="text-muted" style="font-size:0.82rem;">{{ s.joined.strftime('%d %b %Y') }}</td>
+          <td class="mono">{{ s.attempts }}</td>
+          <td>{% if s.attempts > 0 %}<span class="mono text-gold">{{ s.best_marks }}/{{ s.total_marks }}</span>
+              {% else %}<span class="text-muted">—</span>{% endif %}</td>
+          <td>{% if s.attempts > 0 %}
+            <div style="display:flex;align-items:center;gap:0.4rem;">
+              <div style="flex:1;background:var(--navy-mid);border-radius:3px;height:6px;overflow:hidden;min-width:50px;">
+                <div style="width:{{ s.best_pct }}%;height:100%;
+                    background:{% if s.best_pct >= 80 %}var(--emerald){% elif s.best_pct >= 60 %}var(--gold){% else %}var(--rose){% endif %};
+                    border-radius:3px;"></div>
+              </div>
+              <span class="mono" style="font-size:0.82rem;">{{ s.best_pct }}%</span>
+            </div>
+            {% else %}<span class="text-muted">—</span>{% endif %}</td>
+          {% if not selected_schedule %}
+          <td style="font-size:0.82rem;color:var(--text-muted);">{{ s.subjects or '—' }}</td>
+          {% endif %}
+          <td>{% if s.attempts==0 %}<span class="badge badge-danger">Inactive</span>
+              {% elif s.best_pct >= 80 %}<span class="badge badge-success">Top</span>
+              {% else %}<span class="badge badge-warning">Active</span>{% endif %}</td>
+          <td>
+            <form method="POST" action="{{ url_for('admin_delete_student', uid=s.id) }}" style="display:inline;">
+              <button type="submit" class="btn btn-danger btn-sm confirm-delete">🗑</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div style="text-align:center;padding:3rem;color:var(--text-muted);">
+    {% if selected_schedule %}
+    <p>No students have attempted <strong>{{ selected_schedule.subject_name }}</strong> yet.</p>
+    {% else %}
+    <p>No students registered yet.</p>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

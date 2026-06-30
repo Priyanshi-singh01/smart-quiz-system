@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Error {{ code }} — Smart Quiz{% endblock %}
+{% block content %}
+<div class="container page-wrap" style="text-align:center;padding:5rem 1rem;">
+  <div style="font-size:5rem;margin-bottom:1rem;">{% if code == 404 %}🔍{% else %}⚠️{% endif %}</div>
+  <h1 style="font-size:4rem;color:var(--gold);font-family:'JetBrains Mono',monospace;">{{ code }}</h1>
+  <p style="font-size:1.1rem;color:var(--text-muted);margin:1rem 0 2rem;">{{ message }}</p>
+  <a href="{{ url_for('dashboard') }}" class="btn btn-primary">Go to Dashboard</a>
+</div>
+{% endblock %}

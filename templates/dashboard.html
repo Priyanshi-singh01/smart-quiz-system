@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Smart Quiz{% endblock %}
+
+{% block content %}
+<div class="container page-wrap">
+
+  <!-- EXAM INFO — Sabse Uper -->
+  {% if active %}
+  <div style="background:linear-gradient(135deg,rgba(46,204,113,0.15),rgba(46,204,113,0.05));
+              border:2px solid var(--emerald);border-radius:14px;
+              padding:1.5rem 2rem;margin-bottom:2rem;">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+      <div>
+        <div style="font-size:0.78rem;text-transform:uppercase;letter-spacing:0.1em;
+                    color:var(--emerald);font-weight:700;margin-bottom:0.5rem;">
+          🟢 QUIZ ACTIVE NOW
+        </div>
+        <div style="font-size:1.6rem;font-weight:700;color:var(--gold);font-family:'Playfair Display',serif;">
+          {{ active.subject_name }}
+        </div>
+        <div style="display:flex;gap:1.5rem;margin-top:0.5rem;flex-wrap:wrap;">
+          <span style="color:var(--text-muted);font-size:0.9rem;">
+            📋 Paper Code: <strong style="color:var(--text);">{{ active.paper_code }}</strong>
+          </span>
+          <span style="color:var(--text-muted);font-size:0.9rem;">
+            📅 Date: <strong style="color:var(--text);">{{ active.exam_date.strftime('%d %B %Y') }}</strong>
+          </span>
+          <span style="color:var(--text-muted);font-size:0.9rem;">
+            ⏰ Time: <strong style="color:var(--text);">{{ active.start_time.strftime('%I:%M %p') }} — {{ active.end_time.strftime('%I:%M %p') }}</strong>
+          </span>
+        </div>
+      </div>
+      <a href="{{ url_for('quiz') }}" class="btn btn-success btn-lg">▶ Start Quiz Now</a>
+    </div>
+  </div>
+
+  {% elif schedules %}
+  <!-- Upcoming exam info -->
+  <div style="background:rgba(201,168,76,0.08);border:1px solid var(--border);
+              border-radius:14px;padding:1.5rem 2rem;margin-bottom:2rem;">
+    <div style="font-size:0.78rem;text-transform:uppercase;letter-spacing:0.1em;
+                color:var(--gold);font-weight:700;margin-bottom:1rem;">
+      📅 Upcoming Exams
+    </div>
+    {% for s in schedules[:3] %}
+    <div style="display:flex;justify-content:space-between;align-items:center;
+                padding:0.75rem 0;border-bottom:1px solid rgba(255,255,255,0.05);flex-wrap:wrap;gap:0.5rem;">
+      <div style="font-size:1.1rem;font-weight:700;color:var(--gold);">{{ s.subject_name }}</div>
+      <div style="display:flex;gap:1.5rem;flex-wrap:wrap;">
+        <span style="color:var(--text-muted);font-size:0.88rem;">
+          📋 <strong style="color:var(--text);">{{ s.paper_code }}</strong>
+        </span>
+        <span style="color:var(--text-muted);font-size:0.88rem;">
+          📅 <strong style="color:var(--text);">{{ s.exam_date.strftime('%d %B %Y') }}</strong>
+        </span>
+        <span style="color:var(--text-muted);font-size:0.88rem;">
+          ⏰ <strong style="color:var(--text);">{{ s.start_time.strftime('%I:%M %p') }} — {{ s.end_time.strftime('%I:%M %p') }}</strong>
+        </span>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Student Info -->
+  <div class="flex justify-between flex-center mb-2">
+    <div>
+      <h1 class="page-title">Welcome, {{ session.user_name }}! 👋</h1>
+      <p class="page-sub">Your quiz performance summary</p>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon">📋</div>
+      <div class="stat-value">{{ total_attempts }}</div>
+      <div class="stat-label">Total Attempts</div>
+    </div>
+    <div class="stat-card green">
+      <div class="stat-value">{{ avg_score }}%</div>
+      <div class="stat-label">Average Score</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">📋</div>
+      <div class="stat-value" style="color:#00d4ff;text-shadow:0 0 12px rgba(0,212,255,0.5);">
+        {% if recent %}{{ recent[0].obtained_marks }}/{{ recent[0].total_marks }}{% else %}—{% endif %}
+      </div>
+      <div class="stat-label">Last Marks</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 style="font-size:1.1rem;margin-bottom:1.25rem;">Recent Quiz Attempts</h3>
+    {% if recent %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>#</th><th>Subject</th><th>Marks</th><th>Percentage</th><th>Date</th><th>Grade</th></tr>
+        </thead>
+        <tbody>
+          {% for r in recent %}
+          {% set pct = (r.obtained_marks / r.total_marks * 100)|round(1) if r.total_marks else 0 %}
+          <tr>
+            <td class="mono text-muted">{{ loop.index }}</td>
+            <td>
+              {% if r.subject_name %}
+                <span style="color:var(--gold);font-weight:600;font-size:0.9rem;">{{ r.subject_name }}</span><br/>
+                <span class="mono text-muted" style="font-size:0.78rem;">{{ r.paper_code }}</span>
+              {% else %}
+                <span class="text-muted">General Quiz</span>
+              {% endif %}
+            </td>
+            <td><strong class="text-gold mono">{{ r.obtained_marks }}/{{ r.total_marks }}</strong></td>
+            <td>
+              <div style="display:flex;align-items:center;gap:0.5rem;">
+                <div style="flex:1;background:var(--navy-mid);border-radius:3px;height:6px;overflow:hidden;">
+                  <div style="width:{{ pct }}%;height:100%;background:var(--gold);border-radius:3px;"></div>
+                </div>
+                <span class="mono" style="font-size:0.85rem;">{{ pct }}%</span>
+              </div>
+            </td>
+            <td class="text-muted" style="font-size:0.85rem;">{{ r.quiz_date.strftime('%d %b %Y') }}</td>
+            <td>
+              {% if pct >= 80 %}<span class="badge badge-success">Excellent</span>
+              {% elif pct >= 60 %}<span class="badge badge-warning">Good</span>
+              {% else %}<span class="badge badge-danger">Needs Work</span>{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div style="text-align:center;padding:3rem;color:var(--text-muted);">
+      <div style="font-size:3rem;margin-bottom:1rem;">📝</div>
+      <p>No attempts yet. Wait for a scheduled quiz!</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem;">
+    <a href="{{ url_for('leaderboard') }}" class="card card-sm"
+       style="text-decoration:none;display:flex;align-items:center;gap:1rem;transition:transform 0.2s;"
+       onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform=''">
+      <div style="font-size:2rem;">🏆</div>
+      <div>
+        <div style="font-weight:600;color:var(--gold);">My Performance</div>
+        <div style="color:var(--text);font-size:0.85rem;">See your scores</div>
+      </div>
+    </a>
+    <a href="{{ url_for('performance') }}" class="card card-sm"
+       style="text-decoration:none;display:flex;align-items:center;gap:1rem;transition:transform 0.2s;"
+       onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform=''">
+      <div style="font-size:2rem;">📊</div>
+      <div>
+        <div style="font-weight:600;color:var(--gold);">Performance Chart</div>
+        <div style="color:var(--text);font-size:0.85rem;">Track your progress</div>
+      </div>
+    </a>
+  </div>
+</div>
+{% endblock %}

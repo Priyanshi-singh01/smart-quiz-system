@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}My Performance — Smart Quiz{% endblock %}
+{% block head %}<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>{% endblock %}
+
+{% block content %}
+<div class="container page-wrap">
+  <h1 class="page-title">📊 My Performance Analysis</h1>
+  <p class="page-sub">Track your learning progress over time</p>
+
+  {% if stats and stats.attempts %}
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-value">{{ stats.attempts }}</div><div class="stat-label">Total Attempts</div></div>
+    <div class="stat-card green"><div class="stat-value">{{ stats.best|round(1) }}%</div><div class="stat-label">Best Score</div></div>
+    <div class="stat-card blue"><div class="stat-value">{{ stats.avg|round(1) }}%</div><div class="stat-label">Average Score</div></div>
+    <div class="stat-card rose"><div class="stat-value">{{ stats.worst|round(1) }}%</div><div class="stat-label">Lowest Score</div></div>
+  </div>
+
+  <div class="chart-card mb-2">
+    <h3 style="font-size:1.05rem;margin-bottom:1.25rem;">Score Trend Over Time</h3>
+    <canvas id="perf-chart" height="90"
+      data-labels='{{ history | map(attribute="date_str") | list | tojson }}'
+      data-scores='{{ history | map(attribute="percentage") | list | tojson }}'
+      data-tooltips='{{ history | map(attribute="tooltip") | list | tojson }}'></canvas>
+  </div>
+
+  <div class="card">
+    <h3 style="font-size:1.05rem;margin-bottom:1.25rem;">Attempt History</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>#</th><th>Subject</th><th>Paper Code</th><th>Date</th><th>Marks</th><th>Percentage</th><th>Grade</th></tr></thead>
+        <tbody>
+          {% for h in history|reverse %}
+          <tr>
+            <td class="mono text-muted">{{ loop.index }}</td>
+            <td style="color:var(--gold);font-weight:600;">{{ h.subject_name or 'General' }}</td>
+            <td class="mono text-muted" style="font-size:0.85rem;">{{ h.paper_code or '—' }}</td>
+            <td class="text-muted" style="font-size:0.85rem;">{{ h.datetime_str }}</td>
+            <td class="text-gold mono">{{ h.obtained_marks }}/{{ h.total_marks }}</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:0.6rem;">
+                <div style="flex:1;background:var(--navy-mid);border-radius:3px;height:6px;overflow:hidden;min-width:60px;">
+                  <div style="width:{{ h.percentage }}%;height:100%;background:{% if h.percentage >= 80 %}var(--emerald){% elif h.percentage >= 60 %}var(--gold){% else %}var(--rose){% endif %};border-radius:3px;"></div>
+                </div>
+                <span class="mono" style="font-size:0.85rem;">{{ h.percentage }}%</span>
+              </div>
+            </td>
+            <td>
+              {% if h.percentage >= 80 %}<span class="badge badge-success">Excellent</span>
+              {% elif h.percentage >= 60 %}<span class="badge badge-warning">Good</span>
+              {% else %}<span class="badge badge-danger">Poor</span>{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% else %}
+  <div class="card" style="text-align:center;padding:4rem 2rem;">
+    <div style="font-size:3rem;margin-bottom:1rem;">📈</div>
+    <h3>No data yet</h3>
+    <p class="text-muted">Take a quiz to start tracking your performance.</p>
+    <a href="{{ url_for('dashboard') }}" class="btn btn-primary mt-2">Go to Dashboard</a>
+  </div>
+  {% endif %}
+</div>
+
+<script>
+(function() {
+  const canvas = document.getElementById('perf-chart');
+  if (!canvas || typeof Chart === 'undefined') return;
+  const labels   = JSON.parse(canvas.dataset.labels   || '[]');
+  const scores   = JSON.parse(canvas.dataset.scores   || '[]');
+  const tooltips = JSON.parse(canvas.dataset.tooltips || '[]');
+  new Chart(canvas, {
+    type: 'line',
+    data: { labels, datasets: [{
+      label: 'Score %', data: scores,
+      borderColor: '#c9a84c', backgroundColor: 'rgba(201,168,76,0.1)',
+      borderWidth: 2.5, pointBackgroundColor: '#c9a84c', pointRadius: 6, tension: 0.35, fill: true
+    }] },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: (items) => tooltips[items[0].dataIndex] || labels[items[0].dataIndex],
+            label: (ctx) => ' Score: ' + ctx.parsed.y + '%'
+          }
+        }
+      },
+      scales: {
+        x: { ticks: {color:'#8ba3bc'}, grid: {color:'rgba(255,255,255,0.04)'} },
+        y: { min:0, max:100, ticks:{color:'#8ba3bc', callback: v => v+'%'}, grid:{color:'rgba(255,255,255,0.06)'} }
+      }
+    }
+  });
+})();
+</script>
+{% endblock %}

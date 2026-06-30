@@ -1,0 +1,5 @@
+Flask==3.0.0
+psycopg2-binary
+Werkzeug==3.0.1
+Flask-Mail==0.10.0
+reportlab==4.1.0

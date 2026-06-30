@@ -1,0 +1,84 @@
+{% extends "admin/base.html" %}
+{% block title %}Edit Question — Admin{% endblock %}
+
+{% block content %}
+<div style="max-width:750px;">
+  <h1 class="page-title">✏ Edit Question #{{ q.id }}</h1>
+  <p class="page-sub">Modify question details below</p>
+
+  <div class="card">
+    <form method="POST" action="{{ url_for('admin_edit_question', qid=q.id) }}" enctype="multipart/form-data">
+
+      <div class="form-group">
+        <label class="form-label">📅 Assign to Subject / Schedule</label>
+        <select name="schedule_id" class="form-control">
+          <option value="">— No Schedule (General) —</option>
+          {% for s in schedules %}
+          <option value="{{ s.id }}" {% if q.schedule_id == s.id %}selected{% endif %}>
+            {{ s.subject_name }} — {{ s.paper_code }}
+            ({{ s.exam_date.strftime('%d %b %Y') }}, {{ s.start_time.strftime('%I:%M %p') }})
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Question Text</label>
+        <textarea name="question" class="form-control" rows="3" required>{{ q.question }}</textarea>
+      </div>
+
+      {% if q.image_filename %}
+      <div style="margin-bottom:1rem;">
+        <label class="form-label">Current Image</label>
+        <div style="margin-top:0.5rem;">
+          <img src="{{ url_for('uploaded_file', filename=q.image_filename) }}"
+               style="max-width:100%;max-height:200px;border-radius:8px;border:1px solid var(--border);"/>
+        </div>
+        <p style="color:var(--text-muted);font-size:0.8rem;margin-top:0.3rem;">Upload new image below to replace.</p>
+      </div>
+      {% endif %}
+
+      <div class="form-group">
+        <label class="form-label">{{ 'Replace Image' if q.image_filename else 'Add Image (Optional)' }}</label>
+        <input type="file" name="image" accept=".png,.jpg,.jpeg,.gif,.webp"
+               class="form-control" onchange="previewImage(this)"/>
+        <div id="img-preview" style="display:none;margin-top:0.75rem;">
+          <img id="preview-img" style="max-width:100%;max-height:200px;border-radius:8px;border:1px solid var(--border);"/>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+        <div class="form-group"><label class="form-label">Option A</label>
+          <input type="text" name="option1" class="form-control" value="{{ q.option1 }}" required/></div>
+        <div class="form-group"><label class="form-label">Option B</label>
+          <input type="text" name="option2" class="form-control" value="{{ q.option2 }}" required/></div>
+        <div class="form-group"><label class="form-label">Option C</label>
+          <input type="text" name="option3" class="form-control" value="{{ q.option3 }}" required/></div>
+        <div class="form-group"><label class="form-label">Option D</label>
+          <input type="text" name="option4" class="form-control" value="{{ q.option4 }}" required/></div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;">
+        <div class="form-group"><label class="form-label">Correct Answer</label>
+          <input type="text" name="answer" class="form-control" value="{{ q.answer }}" required/></div>
+        <div class="form-group"><label class="form-label">Marks</label>
+          <input type="number" name="marks" class="form-control" value="{{ q.marks or 1 }}" min="1" max="100" required/></div>
+        <div class="form-group"><label class="form-label">Category</label>
+          <input type="text" name="category" class="form-control" value="{{ q.category }}"/></div>
+      </div>
+
+      <div style="display:flex;gap:0.75rem;margin-top:0.5rem;">
+        <button type="submit" class="btn btn-primary">Update Question</button>
+        <a href="{{ url_for('admin_questions') }}" class="btn btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function previewImage(input) {
+  const p=document.getElementById('img-preview'),i=document.getElementById('preview-img');
+  if(input.files&&input.files[0]){const r=new FileReader();r.onload=e=>{i.src=e.target.result;p.style.display='block';};r.readAsDataURL(input.files[0]);}
+}
+</script>
+{% endblock %}

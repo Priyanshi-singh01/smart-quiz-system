@@ -1,0 +1,269 @@
+{% extends "base.html" %}
+{% block title %}Take Quiz — Smart Quiz{% endblock %}
+
+{% block content %}
+<div class="container page-wrap" style="max-width:1200px;">
+
+  <!-- Sticky Header -->
+  <div style="position:sticky;top:64px;z-index:50;background:var(--navy);
+              border-bottom:1px solid var(--border);padding:0.75rem 0;margin-bottom:1.5rem;">
+    <div style="display:flex;justify-content:space-between;align-items:center;max-width:1200px;margin:0 auto;padding:0 1.5rem;flex-wrap:wrap;gap:0.5rem;">
+      <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+        {% if schedule %}
+        <span style="font-weight:600;color:var(--gold);">{{ schedule.subject_name }}</span>
+        <span class="mono text-muted" style="font-size:0.82rem;">{{ schedule.paper_code }}</span>
+        {% endif %}
+        <span style="color:var(--text-muted);font-size:0.85rem;">
+          Answered: <strong style="color:var(--gold);" id="answered-count">0</strong>/{{ questions|length }}
+        </span>
+      </div>
+      <div style="display:flex;align-items:center;gap:1rem;">
+        <div class="timer-badge" id="timer-badge">⏱ <span id="timer-display">{{ timer }}</span></div>
+        <button type="button" id="submit-quiz-btn" class="btn btn-primary" style="padding:0.5rem 1.2rem;">Submit ✓</button>
+      </div>
+    </div>
+    <div style="height:4px;background:var(--navy-mid);margin-top:0.5rem;">
+      <div id="quiz-progress" style="height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-light));width:0%;transition:width 0.3s;"></div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 220px;gap:1.5rem;align-items:start;" id="quiz-layout">
+
+    <!-- Questions Column -->
+    <div>
+      <!-- Info bar -->
+      <div style="background:rgba(201,168,76,0.08);border:1px solid var(--border);border-radius:8px;
+                  padding:0.65rem 1rem;margin-bottom:1.25rem;display:flex;gap:2rem;flex-wrap:wrap;">
+        <span style="font-size:0.88rem;color:var(--text-muted);">Questions: <strong style="color:var(--gold);">{{ questions|length }}</strong></span>
+        <span style="font-size:0.88rem;color:var(--text-muted);">Total Marks: <strong style="color:var(--gold);">{{ questions|sum(attribute='marks') }}</strong></span>
+        {% if schedule %}<span style="font-size:0.88rem;color:var(--text-muted);">Ends: <strong style="color:var(--rose);">{{ schedule.end_time.strftime('%I:%M %p') }}</strong></span>{% endif %}
+        <span style="font-size:0.88rem;color:var(--text-muted);">⚡ Auto-saved every 10s</span>
+      </div>
+
+      <form id="quiz-form" data-duration="{{ timer }}" data-result-id="{{ result_id }}">
+        {% for q in questions %}
+        <div class="question-card" id="qcard-{{ loop.index }}" data-qindex="{{ loop.index }}">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;">
+            <div class="question-num">Question {{ loop.index }} of {{ questions|length }}</div>
+            <span style="background:rgba(201,168,76,0.15);color:var(--gold);padding:0.2rem 0.6rem;border-radius:4px;font-size:0.8rem;font-weight:600;">
+              {{ q.marks }} Mark{% if q.marks > 1 %}s{% endif %}
+            </span>
+          </div>
+          <div class="question-text">{{ q.question }}</div>
+          {% if q.image_filename %}
+          <div style="margin:1rem 0;text-align:center;">
+            <img src="{{ url_for('uploaded_file', filename=q.image_filename) }}" alt="Question Image"
+                 style="max-width:100%;max-height:300px;border-radius:8px;border:1px solid var(--border);"/>
+          </div>
+          {% endif %}
+          <div class="options-grid">
+            {% for opt in [q.option1, q.option2, q.option3, q.option4] %}
+            <label class="option-label {% if saved_answers.get(q.id|string) == opt %}selected{% endif %}">
+              <input type="radio" name="{{ q.id }}" value="{{ opt }}"
+                     {% if saved_answers.get(q.id|string) == opt %}checked{% endif %}/>
+              <span>{{ opt }}</span>
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+        {% endfor %}
+
+        <div style="text-align:center;margin-top:2rem;padding-bottom:2rem;">
+          <p class="text-muted" style="font-size:0.85rem;margin-bottom:1rem;">
+            ✅ All answers are auto-saved. You can safely close and resume later.
+          </p>
+          <button type="button" id="submit-quiz-btn-bottom" class="btn btn-primary btn-lg">
+            Submit Quiz ✓
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Question Navigator Sidebar -->
+    <div style="position:sticky;top:130px;" id="qnav-sidebar">
+      <div class="card" style="padding:1rem;">
+        <div style="font-size:0.75rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--gold);margin-bottom:0.75rem;font-weight:600;">Question Navigator</div>
+        <div id="qnav-grid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:0.3rem;margin-bottom:1rem;">
+          {% for q in questions %}
+          <button class="qnav-btn {% if saved_answers.get(q.id|string) %}answered{% endif %}"
+                  data-qindex="{{ loop.index }}" data-qid="{{ q.id }}"
+                  onclick="scrollToQuestion({{ loop.index }})"
+                  style="aspect-ratio:1;border:1px solid var(--border);border-radius:6px;font-size:0.78rem;
+                         font-weight:600;cursor:pointer;transition:all 0.2s;background:var(--navy-mid);
+                         color:var(--text-muted);">{{ loop.index }}</button>
+          {% endfor %}
+        </div>
+        <div style="display:flex;flex-direction:column;gap:0.4rem;font-size:0.75rem;color:var(--text-muted);">
+          <div style="display:flex;align-items:center;gap:0.5rem;">
+            <div style="width:12px;height:12px;border-radius:3px;background:var(--emerald);flex-shrink:0;"></div> Answered
+          </div>
+          <div style="display:flex;align-items:center;gap:0.5rem;">
+            <div style="width:12px;height:12px;border-radius:3px;background:var(--navy-mid);border:1px solid var(--border);flex-shrink:0;"></div> Not answered
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Submit Modal -->
+<div id="submit-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center;">
+  <div class="card" style="max-width:420px;width:90%;text-align:center;padding:2rem;">
+    <div style="font-size:2.5rem;margin-bottom:1rem;">📋</div>
+    <h3 style="margin-bottom:0.5rem;">Submit Quiz?</h3>
+    <p class="text-muted" style="font-size:0.9rem;margin-bottom:0.5rem;">
+      Answered: <strong id="modal-answered" style="color:var(--gold);">0</strong> / <strong>{{ questions|length }}</strong>
+    </p>
+    <p class="text-muted" style="font-size:0.85rem;margin-bottom:1.5rem;" id="modal-warning"></p>
+    <div style="display:flex;gap:0.75rem;justify-content:center;">
+      <button onclick="closeModal()" class="btn btn-secondary">Go Back</button>
+      <button onclick="doSubmit()" id="confirm-submit-btn" class="btn btn-primary">Yes, Submit</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+.qnav-btn.answered { background: var(--emerald) !important; color: #fff !important; border-color: var(--emerald) !important; }
+.qnav-btn.current  { border-color: var(--gold) !important; box-shadow: 0 0 0 2px rgba(201,168,76,0.4); }
+@media(max-width:768px){ #quiz-layout{grid-template-columns:1fr;} #qnav-sidebar{position:static;order:-1;} }
+</style>
+<script>
+(function initQuiz() {
+  const quizForm  = document.getElementById('quiz-form');
+  if (!quizForm) return;
+  const DURATION   = parseInt(quizForm.dataset.duration || '3600', 10);
+  const RESULT_ID  = quizForm.dataset.resultId || '';
+  let remaining    = DURATION;
+  const timerEl    = document.getElementById('timer-display');
+  const timerBadge = document.getElementById('timer-badge');
+  const progressBar= document.getElementById('quiz-progress');
+  const answeredEl = document.getElementById('answered-count');
+  const totalQ     = quizForm.querySelectorAll('.question-card').length;
+
+  function getAnswers() {
+    const a = {};
+    quizForm.querySelectorAll('input[type=radio]:checked').forEach(r => { a[r.name] = r.value; });
+    return a;
+  }
+
+  function updateProgress() {
+    const answered = quizForm.querySelectorAll('input[type=radio]:checked').length;
+    if (progressBar) progressBar.style.width = (answered / totalQ * 100) + '%';
+    if (answeredEl)  answeredEl.textContent = answered;
+    // Update nav buttons
+    quizForm.querySelectorAll('input[type=radio]:checked').forEach(r => {
+      const navBtn = document.querySelector(`.qnav-btn[data-qid="${r.name}"]`);
+      if (navBtn) navBtn.classList.add('answered');
+    });
+  }
+
+  // Auto-save every 10 seconds
+  let saveInterval = setInterval(() => {
+    if (RESULT_ID) {
+      fetch('/save_answers', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({result_id: RESULT_ID, answers: getAnswers()})
+      }).catch(() => {});
+    }
+  }, 10000);
+
+  quizForm.querySelectorAll('input[type=radio]').forEach(radio => {
+    radio.addEventListener('change', function() {
+      quizForm.querySelectorAll(`input[name="${this.name}"]`).forEach(r => {
+        r.closest('.option-label').classList.remove('selected');
+      });
+      this.closest('.option-label').classList.add('selected');
+      const navBtn = document.querySelector(`.qnav-btn[data-qid="${this.name}"]`);
+      if (navBtn) navBtn.classList.add('answered');
+      updateProgress();
+    });
+  });
+
+  quizForm.querySelectorAll('input[type=radio]:checked').forEach(r => {
+    r.closest('.option-label').classList.add('selected');
+  });
+  updateProgress();
+
+  function formatTime(s) {
+    if (s >= 3600) {
+      const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;
+      return `${h}h ${String(m).padStart(2,'0')}m ${String(sec).padStart(2,'0')}s`;
+    } else if (s >= 60) {
+      const m=Math.floor(s/60),sec=s%60;
+      return `${m}m ${String(sec).padStart(2,'0')}s`;
+    }
+    return `${s}s`;
+  }
+
+  if (timerEl) timerEl.textContent = formatTime(remaining);
+
+  const ticker = setInterval(() => {
+    remaining--;
+    if (timerEl) timerEl.textContent = formatTime(remaining);
+    if (remaining <= 60 && timerBadge) timerBadge.classList.add('danger');
+    if (remaining <= 0) { clearInterval(ticker); clearInterval(saveInterval); doSubmit(); }
+  }, 1000);
+
+  // Intersection observer to highlight current question in nav
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        const idx = e.target.dataset.qindex;
+        document.querySelectorAll('.qnav-btn').forEach(b => b.classList.remove('current'));
+        const btn = document.querySelector(`.qnav-btn[data-qindex="${idx}"]`);
+        if (btn) btn.classList.add('current');
+      }
+    });
+  }, {threshold: 0.5});
+  document.querySelectorAll('.question-card').forEach(card => observer.observe(card));
+
+  // Submit buttons
+  [document.getElementById('submit-quiz-btn'), document.getElementById('submit-quiz-btn-bottom')].forEach(btn => {
+    if (btn) btn.addEventListener('click', showModal);
+  });
+
+  window.showModal = function() {
+    const answered = quizForm.querySelectorAll('input[type=radio]:checked').length;
+    document.getElementById('modal-answered').textContent = answered;
+    const unanswered = totalQ - answered;
+    const warningEl = document.getElementById('modal-warning');
+    if (unanswered > 0) {
+      warningEl.innerHTML = `⚠️ <span style="color:var(--rose);">${unanswered} question${unanswered>1?'s':''} not answered.</span>`;
+    } else {
+      warningEl.innerHTML = '✅ All questions answered!';
+    }
+    document.getElementById('submit-modal').style.display = 'flex';
+  };
+
+  window.closeModal = function() {
+    document.getElementById('submit-modal').style.display = 'none';
+  };
+
+  window.doSubmit = function() {
+    clearInterval(ticker); clearInterval(saveInterval);
+    const btn = document.getElementById('confirm-submit-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Submitting…'; }
+    const topBtn = document.getElementById('submit-quiz-btn');
+    if (topBtn) { topBtn.disabled = true; topBtn.textContent = 'Submitting…'; }
+    fetch('/submit_quiz', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({answers: getAnswers(), result_id: RESULT_ID})
+    })
+    .then(r => r.json())
+    .then(data => { window.location.href = '/result/' + data.result_id; })
+    .catch(() => {
+      alert('Submission failed. Please try again.');
+      if (btn) { btn.disabled = false; btn.textContent = 'Yes, Submit'; }
+      if (topBtn) { topBtn.disabled = false; topBtn.textContent = 'Submit ✓'; }
+    });
+  };
+})();
+
+window.scrollToQuestion = function(idx) {
+  const card = document.getElementById('qcard-' + idx);
+  if (card) { card.scrollIntoView({behavior:'smooth', block:'center'}); }
+};
+</script>
+{% endblock %}

@@ -1,0 +1,126 @@
+{% extends "admin/base.html" %}
+{% block title %}Manage Questions — Admin{% endblock %}
+
+{% block content %}
+
+<!-- Subject Filter Dropdown -->
+<div style="margin-bottom:1.5rem;">
+  <label class="form-label" style="font-size:1rem;color:var(--text-muted);">📚 Select Subject to Manage:</label>
+  <div style="display:flex;gap:1rem;align-items:center;flex-wrap:wrap;margin-top:0.5rem;">
+    <select id="subject-select" class="form-control" style="max-width:380px;"
+            onchange="window.location.href='/admin/questions?schedule_id='+this.value">
+      <option value="all" {% if selected_schedule == 'all' %}selected{% endif %}>— All Questions —</option>
+      {% for s in all_schedules %}
+      <option value="{{ s.id }}" {% if selected_schedule|string == s.id|string %}selected{% endif %}>
+        {{ s.subject_name }} — {{ s.paper_code }}
+        ({{ s.exam_date.strftime('%d %b %Y') }})
+      </option>
+      {% endfor %}
+    </select>
+    {% if selected_schedule != 'all' %}
+    <span style="background:rgba(201,168,76,0.15);color:var(--gold);padding:0.4rem 0.9rem;border-radius:6px;font-size:0.88rem;font-weight:600;">
+      {{ current_schedule.subject_name }} — {{ current_schedule.paper_code }}
+    </span>
+    {% endif %}
+  </div>
+</div>
+
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
+  <div>
+    <h1 class="page-title">❓ Questions</h1>
+    <p class="page-sub">
+      {% if selected_schedule != 'all' and current_schedule %}
+        {{ questions|length }} questions in <strong style="color:var(--gold);">{{ current_schedule.subject_name }}</strong>
+      {% else %}
+        {{ questions|length }} total questions
+      {% endif %}
+    </p>
+  </div>
+  <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+    <a href="{{ url_for('admin_upload_csv') }}{% if selected_schedule != 'all' %}?schedule_id={{ selected_schedule }}{% endif %}"
+       class="btn btn-secondary">📂 Upload CSV</a>
+    <a href="{{ url_for('admin_add_question') }}{% if selected_schedule != 'all' %}?schedule_id={{ selected_schedule }}{% endif %}"
+       class="btn btn-primary">+ Add Question</a>
+    {% if questions and selected_schedule != 'all' %}
+    <form method="POST" action="{{ url_for('admin_delete_schedule_questions', sid=selected_schedule) }}" style="display:inline;">
+      <button type="submit" class="btn btn-danger confirm-delete-all">🗑 Delete This Subject's Questions</button>
+    </form>
+    {% elif questions %}
+    <form method="POST" action="{{ url_for('admin_delete_all_questions') }}" style="display:inline;">
+      <button type="submit" class="btn btn-danger confirm-delete-all">🗑 Delete All</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card">
+  {% if questions %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>#</th><th>Subject</th><th>Question</th><th>Marks</th><th>Image</th><th>Answer</th><th style="text-align:center;">Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for q in questions %}
+        <tr>
+          <td class="mono text-muted">{{ loop.index }}</td>
+          <td>
+            {% if q.subject_name %}
+              <span class="badge badge-warning">{{ q.subject_name }}</span><br/>
+              <span class="mono text-muted" style="font-size:0.75rem;">{{ q.paper_code }}</span>
+            {% else %}
+              <span class="text-muted" style="font-size:0.82rem;">General</span>
+            {% endif %}
+          </td>
+          <td style="max-width:280px;">
+            <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ q.question }}</div>
+          </td>
+          <td>
+            <span style="background:rgba(201,168,76,0.15);color:var(--gold);padding:0.2rem 0.5rem;border-radius:4px;font-size:0.82rem;font-weight:600;">
+              {{ q.marks }} mk
+            </span>
+          </td>
+          <td>
+            {% if q.image_filename %}
+              <span style="color:var(--emerald);font-size:0.85rem;">✓ Yes</span>
+            {% else %}
+              <span class="text-muted" style="font-size:0.85rem;">—</span>
+            {% endif %}
+          </td>
+          <td class="text-gold" style="font-size:0.82rem;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ q.answer }}</td>
+          <td style="text-align:center;">
+            <div style="display:flex;gap:0.4rem;justify-content:center;">
+              <a href="{{ url_for('admin_edit_question', qid=q.id) }}" class="btn btn-secondary btn-sm">Edit</a>
+              <form method="POST" action="{{ url_for('admin_delete_question', qid=q.id) }}" style="display:inline;">
+                <button type="submit" class="btn btn-danger btn-sm confirm-delete">Del</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div style="text-align:center;padding:3rem;color:var(--text-muted);">
+    <div style="font-size:3rem;margin-bottom:1rem;">📝</div>
+    {% if selected_schedule != 'all' and current_schedule %}
+      <p>No questions in <strong style="color:var(--gold);">{{ current_schedule.subject_name }}</strong> yet.</p>
+      <a href="{{ url_for('admin_add_question') }}?schedule_id={{ selected_schedule }}"
+         class="btn btn-primary mt-2">+ Add Question</a>
+    {% else %}
+      <p>No questions yet.</p>
+      <a href="{{ url_for('admin_add_question') }}" class="btn btn-primary mt-2">+ Add First Question</a>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+
+<script>
+document.querySelectorAll('.confirm-delete-all').forEach(btn => {
+  btn.addEventListener('click', function(e) {
+    if (!confirm('DELETE questions?\nThis cannot be undone!')) e.preventDefault();
+  });
+});
+</script>
+{% endblock %}

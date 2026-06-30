@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Student Login — Smart Quiz</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
+</head>
+<body>
+<div class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div style="font-size:2.5rem;margin-bottom:0.5rem;">👨‍🎓</div>
+      <h1>Student Login</h1>
+      <p>Performance Analysis System</p>
+    </div>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for cat, msg in messages %}
+        <div class="alert alert-{{ 'success' if cat == 'success' else 'error' }}">
+          {{ '✓' if cat == 'success' else '✕' }} {{ msg }}
+        </div>
+      {% endfor %}
+    {% endwith %}
+    <form method="POST">
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input type="email" name="email" class="form-control" placeholder="you@example.com" required/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <div style="position:relative;">
+          <input type="password" name="password" id="sp" class="form-control"
+                 placeholder="••••••••" required style="padding-right:3rem;"/>
+          <button type="button" onclick="togglePass('sp','se')"
+                  style="position:absolute;right:0.75rem;top:50%;transform:translateY(-50%);
+                         background:none;border:none;cursor:pointer;font-size:1.1rem;color:var(--text-muted)">
+            <span id="se">👁</span>
+          </button>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block btn-lg">Login →</button>
+    </form>
+    <p style="text-align:center;margin-top:1rem;font-size:0.85rem;">
+      <a href="{{ url_for('forgot_password') }}" style="color:var(--text-muted);">Forgot Password?</a>
+    </p>
+    <hr class="divider"/>
+    <p style="text-align:center;font-size:0.88rem;color:var(--text-muted);">
+      No account? <a href="{{ url_for('register') }}" style="color:var(--gold);">Register here</a>
+      &nbsp;|&nbsp;
+      <a href="{{ url_for('login_choice') }}" style="color:var(--text-muted);">← Back</a>
+    </p>
+  </div>
+</div>
+<script>
+function togglePass(i,e){const x=document.getElementById(i),y=document.getElementById(e);
+x.type=x.type==='password'?'text':'password';y.textContent=x.type==='password'?'👁':'🙈';}
+</script>
+</body>
+</html>

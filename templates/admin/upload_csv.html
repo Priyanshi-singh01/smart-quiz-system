@@ -1,0 +1,62 @@
+{% extends "admin/base.html" %}
+{% block title %}Upload CSV — Admin{% endblock %}
+
+{% block content %}
+<div style="max-width:750px;">
+  <h1 class="page-title">📂 Upload Questions via CSV</h1>
+  <p class="page-sub">Import multiple questions at once</p>
+
+  <div class="card" style="margin-bottom:1rem;">
+    <h3 style="font-size:1.05rem;margin-bottom:1rem;">📋 CSV Format</h3>
+    <div style="background:var(--navy-mid);border-radius:8px;padding:1rem;
+                font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--gold);overflow-x:auto;line-height:1.8;">
+      question,option1,option2,option3,option4,answer,category,marks<br/>
+      What is Python?,Language,Database,OS,Browser,Language,Programming,2
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:1rem;">
+    <h3 style="font-size:1.05rem;margin-bottom:1rem;">⬆ Upload CSV File</h3>
+    <form method="POST" enctype="multipart/form-data">
+
+      <div class="form-group">
+        <label class="form-label">📅 Select Subject / Schedule</label>
+        <select name="upload_schedule_id" class="form-control" required>
+          <option value="">— Select Subject —</option>
+          {% for s in all_schedules %}
+          <option value="{{ s.id }}" {% if preselect|string == s.id|string %}selected{% endif %}>
+            {{ s.subject_name }} — {{ s.paper_code }}
+            ({{ s.exam_date.strftime('%d %b %Y') }})
+          </option>
+          {% endfor %}
+        </select>
+        {% if not all_schedules %}
+        <p style="color:var(--rose);font-size:0.82rem;margin-top:0.3rem;">
+          ⚠️ <a href="{{ url_for('admin_dashboard') }}" style="color:var(--gold);">Create a schedule first →</a>
+        </p>
+        {% endif %}
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Select CSV File</label>
+        <input type="file" name="csv_file" accept=".csv" class="form-control" required/>
+      </div>
+      <div style="display:flex;gap:0.75rem;">
+        <button type="submit" class="btn btn-primary">📂 Import Questions</button>
+        <a href="{{ url_for('admin_questions') }}" class="btn btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+
+  <div class="card">
+    <h3 style="font-size:1.05rem;margin-bottom:0.75rem;">💡 Tips</h3>
+    <ul style="color:var(--text-muted);font-size:0.88rem;padding-left:1.2rem;line-height:2;">
+      <li>First row must be the header row</li>
+      <li><strong>answer</strong> must exactly match one of the 4 options</li>
+      <li><strong>marks</strong> column — number like 1, 2, 5</li>
+      <li>In Excel: File → Save As → CSV (Comma delimited)</li>
+      <li>Images cannot be added via CSV — use Add Question form</li>
+    </ul>
+  </div>
+</div>
+{% endblock %}

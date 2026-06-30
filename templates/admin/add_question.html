@@ -1,0 +1,80 @@
+{% extends "admin/base.html" %}
+{% block title %}Add Question — Admin{% endblock %}
+
+{% block content %}
+<div style="max-width:750px;">
+  <h1 class="page-title">+ Add Question</h1>
+  <p class="page-sub">Fill in all fields below</p>
+
+  <div class="card">
+    <form method="POST" action="{{ url_for('admin_add_question') }}" enctype="multipart/form-data">
+
+      <div class="form-group">
+        <label class="form-label">📅 Subject / Schedule <span style="color:var(--rose);">*</span></label>
+        <select name="schedule_id" class="form-control" required>
+          <option value="">— Select Subject —</option>
+          {% for s in schedules %}
+          <option value="{{ s.id }}" {% if preselect|string == s.id|string %}selected{% endif %}>
+            {{ s.subject_name }} — {{ s.paper_code }}
+            ({{ s.exam_date.strftime('%d %b %Y') }}, {{ s.start_time.strftime('%I:%M %p') }})
+          </option>
+          {% endfor %}
+        </select>
+        {% if not schedules %}
+        <p style="color:var(--rose);font-size:0.82rem;margin-top:0.3rem;">
+          ⚠️ No schedules.
+          <a href="{{ url_for('admin_dashboard') }}" style="color:var(--gold);">Create schedule first →</a>
+        </p>
+        {% endif %}
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Question Text</label>
+        <textarea name="question" class="form-control" rows="3" placeholder="Enter the question..." required></textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Question Image (Optional)</label>
+        <input type="file" name="image" accept=".png,.jpg,.jpeg,.gif,.webp"
+               class="form-control" onchange="previewImage(this)"/>
+        <p style="color:var(--text-muted);font-size:0.8rem;margin-top:0.3rem;">PNG, JPG — Max 5MB</p>
+        <div id="img-preview" style="display:none;margin-top:0.75rem;">
+          <img id="preview-img" style="max-width:100%;max-height:200px;border-radius:8px;border:1px solid var(--border);"/>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+        <div class="form-group"><label class="form-label">Option A</label>
+          <input type="text" name="option1" class="form-control" placeholder="Option A" required/></div>
+        <div class="form-group"><label class="form-label">Option B</label>
+          <input type="text" name="option2" class="form-control" placeholder="Option B" required/></div>
+        <div class="form-group"><label class="form-label">Option C</label>
+          <input type="text" name="option3" class="form-control" placeholder="Option C" required/></div>
+        <div class="form-group"><label class="form-label">Option D</label>
+          <input type="text" name="option4" class="form-control" placeholder="Option D" required/></div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;">
+        <div class="form-group"><label class="form-label">Correct Answer (exact)</label>
+          <input type="text" name="answer" class="form-control" placeholder="Must match one option" required/></div>
+        <div class="form-group"><label class="form-label">Marks</label>
+          <input type="number" name="marks" class="form-control" value="1" min="1" max="100" required/></div>
+        <div class="form-group"><label class="form-label">Category</label>
+          <input type="text" name="category" class="form-control" value="General"/></div>
+      </div>
+
+      <div style="display:flex;gap:0.75rem;margin-top:0.5rem;">
+        <button type="submit" class="btn btn-primary">Save Question</button>
+        <a href="{{ url_for('admin_questions', schedule_id=preselect) }}" class="btn btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function previewImage(input) {
+  const p=document.getElementById('img-preview'),i=document.getElementById('preview-img');
+  if(input.files&&input.files[0]){const r=new FileReader();r.onload=e=>{i.src=e.target.result;p.style.display='block';};r.readAsDataURL(input.files[0]);}
+}
+</script>
+{% endblock %}

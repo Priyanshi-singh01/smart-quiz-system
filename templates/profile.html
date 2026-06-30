@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}My Profile — Smart Quiz{% endblock %}
+
+{% block content %}
+<div class="container page-wrap">
+  <div style="max-width:700px;margin:0 auto;">
+    <h1 class="page-title">My Profile</h1>
+    <p class="page-sub">Manage your account information</p>
+
+    <!-- Profile Info Card -->
+    <div class="card" style="margin-bottom:1.5rem;">
+      <div style="display:flex;align-items:center;gap:1.5rem;margin-bottom:1.5rem;flex-wrap:wrap;">
+        <div style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold-light));
+                    display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:700;color:var(--navy);flex-shrink:0;">
+          {{ user.name[0].upper() }}
+        </div>
+        <div>
+          <div style="font-size:1.4rem;font-weight:700;color:var(--gold);font-family:'Playfair Display',serif;">{{ user.name }}</div>
+          <div class="text-muted" style="font-size:0.88rem;">{{ user.email }}</div>
+          <div style="margin-top:0.3rem;display:flex;gap:0.75rem;flex-wrap:wrap;">
+            <span class="badge badge-warning">Roll: {{ user.roll_number or '—' }}</span>
+            <span class="badge badge-success">{{ attempts }} Attempt{% if attempts != 1 %}s{% endif %}</span>
+            <span class="badge" style="background:rgba(52,152,219,0.15);color:var(--sky);">
+              Joined {{ user.joined.strftime('%b %Y') if user.joined else '—' }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <h3 style="font-size:1rem;margin-bottom:1rem;">Update Information</h3>
+      <form method="POST">
+        <input type="hidden" name="action" value="update_info"/>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+          <div class="form-group">
+            <label class="form-label">Full Name</label>
+            <input type="text" name="name" class="form-control" value="{{ user.name }}" required/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Roll Number</label>
+            <input type="text" name="roll_number" class="form-control" value="{{ user.roll_number or '' }}"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email Address</label>
+          <input type="email" class="form-control" value="{{ user.email }}" disabled style="opacity:0.6;cursor:not-allowed;"/>
+          <small class="text-muted" style="font-size:0.78rem;">Email cannot be changed.</small>
+        </div>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+      </form>
+    </div>
+
+    <!-- Change Password Card -->
+    <div class="card">
+      <h3 style="font-size:1rem;margin-bottom:1rem;">Change Password</h3>
+      <form method="POST">
+        <input type="hidden" name="action" value="change_password"/>
+        <div class="form-group">
+          <label class="form-label">Current Password</label>
+          <input type="password" name="current_password" class="form-control" required/>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+          <div class="form-group">
+            <label class="form-label">New Password</label>
+            <input type="password" name="new_password" class="form-control" minlength="6" required/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Confirm New Password</label>
+            <input type="password" name="confirm_password" class="form-control" minlength="6" required/>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-secondary">Change Password</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

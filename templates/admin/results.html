@@ -1,0 +1,101 @@
+{% extends "admin/base.html" %}
+{% block title %}Results — {% if selected_schedule %}{{ selected_schedule.subject_name }}{% else %}All Subjects{% endif %}{% endblock %}
+
+{% block content %}
+<!-- Subject selector bar (compact) -->
+<div style="background:rgba(201,168,76,0.08);border:1px solid var(--border);border-radius:10px;
+            padding:0.75rem 1.25rem;margin-bottom:1.5rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+  <span style="font-size:0.82rem;color:var(--text-muted);">Filtered by:</span>
+  {% if selected_schedule %}
+  <strong style="color:var(--gold);">📌 {{ selected_schedule.subject_name }} ({{ selected_schedule.paper_code }})</strong>
+  {% else %}
+  <strong style="color:var(--text-muted);">All Subjects</strong>
+  {% endif %}
+  <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary btn-sm" style="margin-left:auto;">
+    ⚙ Change Subject Filter
+  </a>
+</div>
+
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
+  <div>
+    <h1 class="page-title">📋 Quiz Results</h1>
+    <p class="page-sub">
+      {{ results|length }} submission{% if results|length != 1 %}s{% endif %}
+      {% if selected_schedule %} for <strong>{{ selected_schedule.subject_name }}</strong>{% endif %}
+      — sorted by highest marks
+    </p>
+  </div>
+  {% if selected_schedule %}
+  <a href="{{ url_for('export_leaderboard_pdf', schedule_id=selected_schedule.id) }}"
+     class="btn btn-secondary" target="_blank">📄 Export PDF ({{ selected_schedule.subject_name }})</a>
+  {% else %}
+  <a href="{{ url_for('export_leaderboard_pdf') }}" class="btn btn-secondary" target="_blank">📄 Export All PDF</a>
+  {% endif %}
+</div>
+
+<div class="card">
+  {% if results %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Rank</th><th>Student Name</th><th>Roll No.</th>
+          {% if not selected_schedule %}<th>Subject</th>{% endif %}
+          <th>Marks</th><th>Percentage</th><th>Date &amp; Time</th><th>Grade</th><th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in results %}
+        <tr>
+          <td>{% if loop.index==1 %}<span class="rank-badge gold">1</span>
+              {% elif loop.index==2 %}<span class="rank-badge silver">2</span>
+              {% elif loop.index==3 %}<span class="rank-badge bronze">3</span>
+              {% else %}<span class="rank-badge">{{ loop.index }}</span>{% endif %}</td>
+          <td><strong>{{ r.name }}</strong></td>
+          <td class="mono text-gold" style="font-size:0.88rem;">{{ r.roll_number or '—' }}</td>
+          {% if not selected_schedule %}
+          <td style="font-size:0.85rem;">
+            {% if r.subject_name %}<span class="badge badge-warning">{{ r.subject_name }}</span><br/>
+            <span class="mono text-muted" style="font-size:0.78rem;">{{ r.paper_code }}</span>{% else %}—{% endif %}
+          </td>
+          {% endif %}
+          <td>
+            <span class="mono text-gold">{{ r.obtained_marks }}</span>
+            <span class="text-muted">/{{ r.total_marks }}</span>
+          </td>
+          <td>
+            <div style="display:flex;align-items:center;gap:0.6rem;">
+              <div style="flex:1;background:var(--navy-mid);border-radius:3px;height:7px;overflow:hidden;min-width:70px;">
+                <div style="width:{{ r.pct or 0 }}%;height:100%;
+                    background:{% if r.pct >= 80 %}var(--emerald){% elif r.pct >= 60 %}var(--gold){% else %}var(--rose){% endif %};
+                    border-radius:3px;"></div>
+              </div>
+              <span class="mono" style="font-size:0.85rem;">{{ r.pct or 0 }}%</span>
+            </div>
+          </td>
+          <td class="text-muted" style="font-size:0.82rem;">{{ r.quiz_date.strftime('%d %b %Y, %I:%M %p') }}</td>
+          <td>
+            {% if r.pct >= 80 %}<span class="badge badge-success">A — Excellent</span>
+            {% elif r.pct >= 70 %}<span class="badge badge-success">B — Good</span>
+            {% elif r.pct >= 60 %}<span class="badge badge-warning">C — Average</span>
+            {% elif r.pct >= 40 %}<span class="badge badge-warning">D — Below Avg</span>
+            {% else %}<span class="badge badge-danger">F — Fail</span>{% endif %}
+          </td>
+          <td>
+            <form method="POST" action="{{ url_for('admin_delete_result', rid=r.id) }}" style="display:inline;">
+              <button type="submit" class="btn btn-danger btn-sm confirm-delete" title="Delete this result">🗑</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div style="text-align:center;padding:3rem;color:var(--text-muted);">
+    <div style="font-size:3rem;margin-bottom:1rem;">📋</div>
+    <p>{% if selected_schedule %}No results for {{ selected_schedule.subject_name }} yet.{% else %}No quiz results yet.{% endif %}</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

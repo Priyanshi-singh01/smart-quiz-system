@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>{% block title %}Admin — Smart Quiz{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
+  {% block head %}{% endblock %}
+</head>
+<body>
+<nav class="navbar">
+  <a href="{{ url_for('admin_dashboard') }}" class="nav-brand">🎓 <span>Smart</span>Quiz <span style="font-size:0.7rem;background:rgba(231,76,60,0.2);color:var(--rose);padding:0.15rem 0.5rem;border-radius:4px;margin-left:0.4rem;vertical-align:middle;">ADMIN</span></a>
+  <div class="nav-links">
+    <a href="{{ url_for('admin_dashboard') }}">Dashboard</a>
+    <a href="{{ url_for('admin_questions') }}">Questions</a>
+    <a href="{{ url_for('admin_results') }}">Results</a>
+    <a href="{{ url_for('admin_students') }}">Students</a>
+    <a href="{{ url_for('admin_change_password') }}" style="color:var(--text-muted);">Password</a>
+    <a href="{{ url_for('logout') }}" class="btn-logout">Logout</a>
+  </div>
+</nav>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div style="max-width:1200px;margin:1rem auto;padding:0 1.5rem;">
+    {% for cat, msg in messages %}
+    <div class="alert alert-{{ 'success' if cat == 'success' else 'error' }}">
+      {{ '✓' if cat == 'success' else '✕' }} {{ msg }}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+{% endwith %}
+
+<div class="admin-layout">
+  <div class="sidebar">
+    <div class="sidebar-title">Navigation</div>
+    <a href="{{ url_for('admin_dashboard') }}" class="{{ 'active' if request.endpoint == 'admin_dashboard' else '' }}">📊 Dashboard</a>
+    <a href="{{ url_for('admin_questions') }}" class="{{ 'active' if 'question' in request.endpoint else '' }}">❓ Questions</a>
+    <a href="{{ url_for('admin_upload_csv') }}" class="{{ 'active' if request.endpoint == 'admin_upload_csv' else '' }}">📥 Upload CSV</a>
+    <a href="{{ url_for('admin_results') }}" class="{{ 'active' if request.endpoint == 'admin_results' else '' }}">📋 Results</a>
+    <a href="{{ url_for('admin_students') }}" class="{{ 'active' if request.endpoint == 'admin_students' else '' }}">👥 Students</a>
+    <div class="sidebar-title" style="margin-top:1rem;">Export</div>
+    <a href="{{ url_for('export_leaderboard_pdf') }}" target="_blank">📄 Export PDF</a>
+    <div class="sidebar-title" style="margin-top:1rem;">Settings</div>
+    <a href="{{ url_for('admin_change_password') }}" class="{{ 'active' if request.endpoint == 'admin_change_password' else '' }}">🔑 Change Password</a>
+    <a href="{{ url_for('logout') }}" style="color:var(--rose);">🚪 Logout</a>
+  </div>
+
+  <div class="admin-content">
+    {% block content %}{% endblock %}
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>{% block title %}Smart Quiz{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
+  {% block head %}{% endblock %}
+</head>
+<body>
+<nav class="navbar">
+  <a href="{{ url_for('dashboard') }}" class="nav-brand">🎓 <span>Smart</span>Quiz</a>
+  <button class="nav-toggle" id="nav-toggle" aria-label="Menu" style="display:none;background:none;border:1px solid var(--border);border-radius:6px;padding:0.4rem 0.6rem;cursor:pointer;color:var(--text);">☰</button>
+  <div class="nav-links" id="nav-links">
+    <a href="{{ url_for('dashboard') }}">🏠 Home</a>
+    <a href="{{ url_for('quiz') }}">📝 Quiz</a>
+    <a href="{{ url_for('leaderboard') }}">🏆 Board</a>
+    <a href="{{ url_for('performance') }}">📊 Stats</a>
+    <a href="{{ url_for('profile') }}" style="color:var(--text-muted);">👤 Profile</a>
+    <a href="{{ url_for('logout') }}" class="btn-logout">Logout</a>
+  </div>
+</nav>
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div style="max-width:1100px;margin:1rem auto;padding:0 1.5rem;">
+    {% for cat, msg in messages %}
+    <div class="alert alert-{{ 'success' if cat == 'success' else 'error' }}">
+      {{ '✓' if cat == 'success' else '✕' }} {{ msg }}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+{% endwith %}
+{% block content %}{% endblock %}
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

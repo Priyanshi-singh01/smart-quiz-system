@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}Leaderboard — Smart Quiz{% endblock %}
+
+{% block content %}
+<div class="container page-wrap">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+    <div>
+      <h1 class="page-title">🏆 Leaderboard</h1>
+      {% if is_admin %}
+        <p class="page-sub">All students ranked by best marks</p>
+      {% else %}
+        <p class="page-sub">Your personal performance summary</p>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if is_admin and leaders|length >= 3 %}
+  <div class="podium">
+    <div class="podium-place">
+      <div class="podium-block">🥈</div>
+      <div class="podium-name">{{ leaders[1].name }}</div>
+      <div class="podium-score">{{ leaders[1].best_marks }} marks</div>
+    </div>
+    <div class="podium-place">
+      <div class="podium-block">🥇</div>
+      <div class="podium-name">{{ leaders[0].name }}</div>
+      <div class="podium-score">{{ leaders[0].best_marks }} marks</div>
+    </div>
+    <div class="podium-place">
+      <div class="podium-block">🥉</div>
+      <div class="podium-name">{{ leaders[2].name }}</div>
+      <div class="podium-score">{{ leaders[2].best_marks }} marks</div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if not is_admin and leaders %}
+  <div class="card" style="margin-bottom:1.5rem;text-align:center;padding:2rem;">
+    <div style="font-size:3rem;margin-bottom:0.5rem;">📊</div>
+    <h2 style="color:var(--gold);margin-bottom:0.5rem;">{{ leaders[0].name }}</h2>
+    <p style="color:var(--text-muted);font-size:0.9rem;margin-bottom:1.5rem;">
+      Roll No: <strong style="color:var(--gold);">{{ leaders[0].roll_number or '—' }}</strong>
+    </p>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;max-width:500px;margin:0 auto;">
+      <div style="background:var(--navy-mid);border-radius:8px;padding:1rem;">
+        <div style="font-size:1.5rem;font-weight:700;color:var(--gold);font-family:'JetBrains Mono',monospace;">{{ leaders[0].best_marks }}/{{ leaders[0].total_marks }}</div>
+        <div style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;margin-top:0.3rem;">Best Marks</div>
+      </div>
+      <div style="background:var(--navy-mid);border-radius:8px;padding:1rem;">
+        <div style="font-size:1.5rem;font-weight:700;color:var(--emerald);font-family:'JetBrains Mono',monospace;">{{ leaders[0].percentage }}%</div>
+        <div style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;margin-top:0.3rem;">Percentage</div>
+      </div>
+      <div style="background:var(--navy-mid);border-radius:8px;padding:1rem;">
+        <div style="font-size:1.5rem;font-weight:700;color:#00d4ff;font-family:'JetBrains Mono',monospace;">{{ leaders[0].attempts }}</div>
+        <div style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;margin-top:0.3rem;">Attempts</div>
+      </div>
+    </div>
+    <div style="margin-top:1.5rem;">
+      {% if leaders[0].percentage >= 90 %}<span class="grade-badge grade-A">🏆 Outstanding!</span>
+      {% elif leaders[0].percentage >= 80 %}<span class="grade-badge grade-A">⭐ Excellent!</span>
+      {% elif leaders[0].percentage >= 60 %}<span class="grade-badge grade-B">👍 Good!</span>
+      {% else %}<span class="grade-badge grade-C">📚 Keep Practicing!</span>{% endif %}
+    </div>
+    <div style="margin-top:1rem;">
+      <a href="{{ url_for('performance') }}" class="btn btn-secondary">
+        📊 View Full Performance →
+      </a>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if not is_admin and not leaders %}
+  <div class="card" style="text-align:center;padding:4rem 2rem;">
+    <div style="font-size:3rem;margin-bottom:1rem;">📝</div>
+    <h3 style="margin-bottom:0.5rem;">No attempts yet</h3>
+    <p class="text-muted">Take a quiz to see your performance here.</p>
+    <a href="{{ url_for('quiz') }}" class="btn btn-primary mt-2">Take Quiz Now</a>
+  </div>
+  {% endif %}
+
+  {% if is_admin %}
+  <div class="card">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Rank</th><th>Name</th><th>Roll No.</th><th>Best Marks</th><th>Percentage</th><th>Attempts</th><th>Last Attempt</th></tr>
+        </thead>
+        <tbody>
+          {% for s in leaders %}
+          <tr>
+            <td>
+              {% if loop.index == 1 %}<span class="rank-badge gold">1</span>
+              {% elif loop.index == 2 %}<span class="rank-badge silver">2</span>
+              {% elif loop.index == 3 %}<span class="rank-badge bronze">3</span>
+              {% else %}<span class="rank-badge">{{ loop.index }}</span>{% endif %}
+            </td>
+            <td><strong>{{ s.name }}</strong></td>
+            <td class="mono text-gold">{{ s.roll_number or '—' }}</td>
+            <td class="text-gold mono">{{ s.best_marks }}/{{ s.total_marks }}</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:0.6rem;">
+                <div style="flex:1;background:var(--navy-mid);border-radius:3px;height:8px;overflow:hidden;min-width:80px;">
+                  <div style="width:{{ s.percentage }}%;height:100%;background:{% if s.percentage >= 80 %}var(--emerald){% elif s.percentage >= 60 %}var(--gold){% else %}var(--rose){% endif %};border-radius:3px;"></div>
+                </div>
+                <span class="mono" style="font-size:0.85rem;">{{ s.percentage }}%</span>
+              </div>
+            </td>
+            <td class="text-muted">{{ s.attempts }}</td>
+            <td class="text-muted" style="font-size:0.85rem;">{{ s.last_attempt.strftime('%d %b %Y') }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if not leaders %}
+    <div style="text-align:center;padding:3rem;color:var(--text-muted);">No results yet.</div>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
