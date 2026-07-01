@@ -1229,6 +1229,7 @@ def too_large(e):
     flash('File too large. Maximum 5MB.', 'error')
     return redirect(request.referrer or url_for('admin_questions'))
 
+init_db()
+
 if __name__ == '__main__':
-    init_db()
     app.run(debug=False, host='0.0.0.0', port=5000)
