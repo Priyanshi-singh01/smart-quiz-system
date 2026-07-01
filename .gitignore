@@ -4,4 +4,4 @@ __pycache__/
 uploads/*.png
 uploads/*.jpg
 *.zip
-.envrq1asDRS
+.env
